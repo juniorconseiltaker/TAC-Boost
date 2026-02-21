@@ -316,7 +316,9 @@ question_id,category_slug,category_name,question_text,answer_position,answer_tex
 85,organisationnel,Organisationnel,"Quel document n'est pas obligatoire pour un dossier étudiant complet ?",1,"Carte étudiante et certificat de scolarité",0,
 85,organisationnel,Organisationnel,"Quel document n'est pas obligatoire pour un dossier étudiant complet ?",2,"Le CV et la lettre de motivation",0,
 85,organisationnel,Organisationnel,"Quel document n'est pas obligatoire pour un dossier étudiant complet ?",3,"La CVEC",0,
-86,organisationnel,Organisationnel,"Comment faire s'il y a plusieurs clients sur une même étude ?",0,"Il faut faire autant de CE que de clients.",0,
+86,organisationnel,Organisationnel,"Comment faire s'il y a plusieurs clients sur une même étude ?",0,"Il faut faire autant de CE que de clients.",0,En cas d'avenant au RM, que mettre comme référence sur le BV ?
+
+
 86,organisationnel,Organisationnel,"Comment faire s'il y a plusieurs clients sur une même étude ?",1,"Il faut faire une convention (multi) partite.",1,
 86,organisationnel,Organisationnel,"Comment faire s'il y a plusieurs clients sur une même étude ?",2,"Il faut faire une CE seulement avec le client qui paye l'étude.",0,
 87,organisationnel,Organisationnel,"Quelle est la juridiction compétente à faire figurer dans une Convention d'Etude à l'article ""Litiges"" ?",0,"Pour une institution publique, il s'agit du CA de la CNJE.",0,

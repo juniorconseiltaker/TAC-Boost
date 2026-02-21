@@ -6,6 +6,7 @@ services:
         - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
         - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
         - AUTH_SECRET=${AUTH_SECRET}
+    container_name: tac1-boost
     ports:
       - '3500:3500'
     env_file:
@@ -13,4 +14,31 @@ services:
     environment:
       - NODE_ENV=production
       - DEBUG=authjs
+    volumes:
+      - tac1-data:/app/data
     restart: unless-stopped
+    networks:
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-network"
+
+      # HTTP & redirect
+      - "traefik.http.routers.tacboost-http.rule=Host(`tacboost.juniortaker.com`)"
+      - "traefik.http.routers.tacboost-http.entrypoints=web"
+      - "traefik.http.routers.tacboost-http.middlewares=redirect-to-https@docker"
+
+      # HTTPS
+      - "traefik.http.routers.tacboost.rule=Host(`tacboost.juniortaker.com`)"
+      - "traefik.http.routers.tacboost.entrypoints=websecure"
+      - "traefik.http.routers.tacboost.tls.certresolver=letsencrypt"
+
+      # docker port 
+      - "traefik.http.services.tacboost.loadbalancer.server.port=3500"
+
+networks:
+  traefik-network:
+    external: true
+
+volumes:
+  tac1-data:
