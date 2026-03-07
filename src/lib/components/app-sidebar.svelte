@@ -3,6 +3,7 @@
 	import FileQuestionIcon from '@lucide/svelte/icons/file-question';
 	import UploadIcon from '@lucide/svelte/icons/upload';
 	import UsersIcon from '@lucide/svelte/icons/users';
+	import ClipboardListIcon from '@lucide/svelte/icons/clipboard-list';
 	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 
 	// Menu items.
@@ -21,6 +22,11 @@
 			title: 'Utilisateurs',
 			url: '/admin/users',
 			icon: UsersIcon
+		},
+		{
+			title: 'Sessions',
+			url: '/admin/sessions',
+			icon: ClipboardListIcon
 		},
 		{
 			title: 'Import JSON',
@@ -55,8 +61,8 @@
 			<Sidebar.GroupLabel>Application</Sidebar.GroupLabel>
 			<Sidebar.GroupContent>
 				<Sidebar.Menu>
-					{#each items as item}
-						<Sidebar.MenuItem key={item.url}>
+					{#each items as item (item.url)}
+						<Sidebar.MenuItem>
 							<Sidebar.MenuButton isActive={$page.url.pathname === item.url}>
 								{#snippet child({ props }: { props: Record<string, unknown> })}
 									<a href={item.url} {...props}>

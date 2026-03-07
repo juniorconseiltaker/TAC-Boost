@@ -9,6 +9,7 @@
 	import ClipboardListIcon from '@lucide/svelte/icons/clipboard-list';
 	import SettingsIcon from '@lucide/svelte/icons/settings';
 	import TruckIcon from '@lucide/svelte/icons/truck';
+	import UsersIcon from '@lucide/svelte/icons/users';
 
 	let {
 		startQuiz,
@@ -329,30 +330,41 @@
 						</button>
 					</div>
 
-					<!-- Link to Scoreboard -->
+					<!-- Links -->
 					<div class="text-center mt-4 pt-4 border-t border-[#122555]/10">
-						<a
-							href="/scoreboard"
-							class="inline-flex items-center gap-2 text-[#122555] hover:text-[#122555]/80 font-medium transition-colors"
-						>
-							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-								/>
-							</svg>
-							Voir le classement
-							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M9 5l7 7-7 7"
-								/>
-							</svg>
-						</a>
+						<div class="flex flex-wrap justify-center gap-4">
+							<a
+								href="/scoreboard"
+								class="inline-flex items-center gap-2 text-[#122555] hover:text-[#122555]/80 font-medium transition-colors"
+							>
+								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+									/>
+								</svg>
+								Voir le classement
+							</a>
+							{#if session}
+								<a
+									href="/sessions"
+									class="inline-flex items-center gap-2 text-[#122555] hover:text-[#122555]/80 font-medium transition-colors"
+								>
+									<UsersIcon class="w-5 h-5" />
+									Sessions de test
+								</a>
+							{:else}
+								<button
+									onclick={() => signIn('google')}
+									class="inline-flex items-center gap-2 text-[#122555] hover:text-[#122555]/80 font-medium transition-colors"
+								>
+									<UsersIcon class="w-5 h-5" />
+									Sessions de test (connexion)
+								</button>
+							{/if}
+						</div>
 					</div>
 				</div>
 			</div>

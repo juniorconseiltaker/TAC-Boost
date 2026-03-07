@@ -28,3 +28,7 @@ vite.config.ts.timestamp-*
 data/tac1.db-shm
 data/tac1.db-wal
 data/tac1.db
+data/questions-clr.json
+data/questions-mouvement.json
+data/questions-organisationnel.json
+data/questions-tresorerie.json

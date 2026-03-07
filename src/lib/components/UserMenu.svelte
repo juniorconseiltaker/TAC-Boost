@@ -3,6 +3,7 @@
 	import type { Session } from '@auth/core/types';
 	import UserIcon from '@lucide/svelte/icons/user';
 	import TrophyIcon from '@lucide/svelte/icons/trophy';
+	import UsersIcon from '@lucide/svelte/icons/users';
 	import LogOutIcon from '@lucide/svelte/icons/log-out';
 	import SettingsIcon from '@lucide/svelte/icons/settings';
 
@@ -73,6 +74,13 @@
 			>
 				<TrophyIcon class="w-4 h-4" />
 				Classement
+			</a>
+			<a
+				href="/sessions"
+				class="flex items-center gap-2 px-4 py-2 text-sm text-[#122555] hover:bg-[#122555]/5 transition-colors"
+			>
+				<UsersIcon class="w-4 h-4" />
+				Sessions de test
 			</a>
 			{#if isAdmin}
 				<a

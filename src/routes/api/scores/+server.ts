@@ -1,6 +1,12 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from '@sveltejs/kit';
-import { saveScore, getLeaderboard, updateQuestionStats, getOrCreateUser } from '$lib/server/db';
+import {
+	saveScore,
+	getLeaderboard,
+	getLeaderboardResetInfo,
+	updateQuestionStats,
+	getOrCreateUser
+} from '$lib/server/db';
 
 export const GET: RequestHandler = async ({ url }) => {
 	const mode = url.searchParams.get('mode');
@@ -13,7 +19,9 @@ export const GET: RequestHandler = async ({ url }) => {
 	}
 
 	const leaderboard = getLeaderboard(mode);
-	return json({ leaderboard });
+	const { weekStartAt, nextResetAt } = getLeaderboardResetInfo();
+
+	return json({ leaderboard, weekStartAt, nextResetAt });
 };
 
 export const POST: RequestHandler = async ({ request, locals }) => {

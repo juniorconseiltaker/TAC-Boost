@@ -27,6 +27,8 @@
 				}
 			} else if (segments[1] === 'import') {
 				crumbs.push({ label: 'Import JSON', href: '/admin/import' });
+			} else if (segments[1] === 'sessions') {
+				crumbs.push({ label: 'Sessions', href: '/admin/sessions' });
 			}
 		}
 		return crumbs;
@@ -41,7 +43,7 @@
 		<Separator orientation="vertical" class="mr-2 h-4" />
 		<Breadcrumb.Root>
 			<Breadcrumb.List>
-				{#each breadcrumbs as crumb, i}
+				{#each breadcrumbs as crumb, i (crumb.href)}
 					<Breadcrumb.Item>
 						{#if i === breadcrumbs.length - 1}
 							<Breadcrumb.Page>{crumb.label}</Breadcrumb.Page>

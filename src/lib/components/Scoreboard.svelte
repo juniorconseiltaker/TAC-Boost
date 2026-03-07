@@ -19,17 +19,22 @@
 	let loadingTreso = $state(true);
 	let errorOrga = $state<string | null>(null);
 	let errorTreso = $state<string | null>(null);
+	let nextResetAt = $state<string | null>(null);
+	let countdownText = $state('');
+	let isRefreshingAfterReset = $state(false);
 
 	// Carousel state
-	let currentSlide = $state(0);
-
-	$effect(() => {
-		currentSlide = initialMode === 'tresorerie' ? 1 : 0;
-	});
+	let currentSlide = $state(initialMode === 'tresorerie' ? 1 : 0);
 	let touchStartX = $state(0);
 	let touchEndX = $state(0);
 	let isDragging = $state(false);
 	let currentTranslate = $state(0);
+
+	interface LeaderboardApiResponse {
+		leaderboard: ScoreEntry[];
+		weekStartAt?: string;
+		nextResetAt?: string;
+	}
 
 	async function fetchLeaderboard(mode: Exclude<ExamMode, 'custom'>) {
 		if (mode === 'organisationnel') {
@@ -43,7 +48,10 @@
 		try {
 			const response = await fetch(`/api/scores?mode=${mode}`);
 			if (!response.ok) throw new Error('Failed to fetch leaderboard');
-			const data = await response.json();
+			const data = (await response.json()) as LeaderboardApiResponse;
+			if (typeof data.nextResetAt === 'string') {
+				nextResetAt = data.nextResetAt;
+			}
 			if (mode === 'organisationnel') {
 				leaderboardOrga = data.leaderboard;
 			} else {
@@ -67,7 +75,6 @@
 
 	function goToSlide(index: number) {
 		currentSlide = index;
-		activeMode = index === 0 ? 'organisationnel' : 'tresorerie';
 		currentTranslate = 0;
 	}
 
@@ -107,6 +114,55 @@
 	$effect(() => {
 		fetchLeaderboard('organisationnel');
 		fetchLeaderboard('tresorerie');
+	});
+
+	function formatCountdown(remainingMs: number): string {
+		const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+		const days = Math.floor(totalSeconds / 86400);
+		const hours = Math.floor((totalSeconds % 86400) / 3600);
+		const minutes = Math.floor((totalSeconds % 3600) / 60);
+		const seconds = totalSeconds % 60;
+		const timePart = `${hours.toString().padStart(2, '0')}h ${minutes
+			.toString()
+			.padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
+		return days > 0 ? `${days}j ${timePart}` : timePart;
+	}
+
+	$effect(() => {
+		if (typeof window === 'undefined' || !nextResetAt) {
+			countdownText = '';
+			return;
+		}
+
+		const targetResetAt = nextResetAt;
+
+		const updateCountdown = () => {
+			const remainingMs = new Date(targetResetAt).getTime() - Date.now();
+			if (Number.isNaN(remainingMs)) {
+				countdownText = '';
+				return;
+			}
+
+			if (remainingMs <= 0) {
+				countdownText = 'Réinitialisation en cours...';
+				if (!isRefreshingAfterReset) {
+					isRefreshingAfterReset = true;
+					Promise.all([
+						fetchLeaderboard('organisationnel'),
+						fetchLeaderboard('tresorerie')
+					]).finally(() => {
+						isRefreshingAfterReset = false;
+					});
+				}
+				return;
+			}
+
+			countdownText = formatCountdown(remainingMs);
+		};
+
+		updateCountdown();
+		const intervalId = window.setInterval(updateCountdown, 1000);
+		return () => window.clearInterval(intervalId);
 	});
 
 	function getRankEmoji(index: number): string {
@@ -153,6 +209,17 @@
 		</button>
 	</div>
 
+	{#if nextResetAt}
+		<div
+			class="px-6 py-3 bg-[#122555]/5 border-b border-[#122555]/10 flex items-center justify-between gap-3 text-sm"
+		>
+			<p class="text-[#122555]/70">Classement hebdomadaire (reset chaque lundi)</p>
+			<p class="font-mono font-semibold text-[#122555] whitespace-nowrap">
+				{countdownText || '...'}
+			</p>
+		</div>
+	{/if}
+
 	<!-- Carousel Container -->
 	<div
 		class="overflow-hidden touch-pan-y"
@@ -187,7 +254,7 @@
 				{:else if leaderboardOrga.length === 0}
 					<div class="text-center py-12">
 						<p class="text-[#122555]/60 text-lg flex items-center justify-center gap-2">
-							<TrophyIcon class="w-5 h-5" /> Aucun score pour le moment
+							<TrophyIcon class="w-5 h-5" /> Aucun score cette semaine
 						</p>
 						<p class="text-[#122555]/40 mt-2">Soyez le premier à apparaître au classement !</p>
 					</div>
@@ -269,7 +336,7 @@
 				{:else if leaderboardTreso.length === 0}
 					<div class="text-center py-12">
 						<p class="text-[#122555]/60 text-lg flex items-center justify-center gap-2">
-							<TrophyIcon class="w-5 h-5" /> Aucun score pour le moment
+							<TrophyIcon class="w-5 h-5" /> Aucun score cette semaine
 						</p>
 						<p class="text-[#122555]/40 mt-2">Soyez le premier à apparaître au classement !</p>
 					</div>
