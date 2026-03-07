@@ -2,23 +2,15 @@
 	import { onMount } from 'svelte';
 	import { quizResult, currentExamMode } from '$lib/stores.js';
 	import { formatTime } from '$lib/quiz.js';
-	import type { QuizResult, QuizAnswer, ExamMode } from '$lib/types.js';
+	import type { QuizAnswer } from '$lib/types.js';
 	import type { Session } from '@auth/core/types';
 
 	let { resetQuiz, session }: { resetQuiz: () => void; session: Session | null } = $props();
 
-	let result = $state<QuizResult | null>(null);
-	let examMode = $state<ExamMode>('custom');
+	let result = $derived($quizResult);
+	let examMode = $derived($currentExamMode);
 	let showAnimation = $state(false);
 	let saveStatus = $state<'idle' | 'saving' | 'saved' | 'error'>('idle');
-
-	$effect(() => {
-		result = $quizResult;
-	});
-
-	$effect(() => {
-		examMode = $currentExamMode;
-	});
 
 	onMount(() => {
 		setTimeout(() => {
@@ -122,21 +114,21 @@ Score: ${r.score}%
 Questions: ${r.answers.filter((a: QuizAnswer) => a.isCorrect).length}/${r.totalQuestions} correctes
 Temps total: ${formatTime(r.timeSpent)}
 
-DÉTAIL PAR CATÉGORIE:
-${Object.entries(r.categoryScores)
-	.map(
-		([category, scores]: [string, any]) =>
-			`${category}: ${scores.correct}/${scores.total} (${Math.round((scores.correct / scores.total) * 100)}%)`
-	)
-	.join('\n')}
+	DÉTAIL PAR CATÉGORIE:
+	${Object.entries(r.categoryScores)
+		.map(
+			([category, scores]) =>
+				`${category}: ${scores.correct}/${scores.total} (${Math.round((scores.correct / scores.total) * 100)}%)`
+		)
+		.join('\n')}
 
-ERREURS:
-${r.answers
-	.map((answer: any, index: number) => ({ answer, index }))
-	.filter(({ answer }: any) => !answer.isCorrect)
-	.map(({ index }: any) => `Q${index + 1}: ${r.answers[index].selectedAnswer}`)
-	.join('\n')}
-		`.trim();
+	ERREURS:
+	${r.answers
+		.map((answer, index) => ({ answer, index }))
+		.filter(({ answer }) => !answer.isCorrect)
+		.map(({ answer, index }) => `Q${index + 1}: ${answer.selectedAnswer}`)
+		.join('\n')}
+			`.trim();
 
 		const blob = new Blob([pdf], { type: 'text/plain' });
 		const url = URL.createObjectURL(blob);
