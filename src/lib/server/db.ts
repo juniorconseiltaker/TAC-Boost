@@ -60,6 +60,44 @@ export function getDb(): Database.Database {
 		// Column probably already exists
 	}
 
+	// Migration: add custom_categories column and allow 'custom' exam mode in test_sessions
+	try {
+		const cols = _db.prepare('PRAGMA table_info(test_sessions)').all() as { name: string }[];
+		if (!cols.find((c) => c.name === 'custom_categories')) {
+			_db.pragma('foreign_keys = OFF');
+			_db.exec(`
+				DROP TABLE IF EXISTS test_sessions_v2;
+				CREATE TABLE test_sessions_v2 (
+					id INTEGER PRIMARY KEY AUTOINCREMENT,
+					pin TEXT NOT NULL UNIQUE,
+					created_by TEXT NOT NULL REFERENCES users(id),
+					exam_mode TEXT NOT NULL CHECK(exam_mode IN ('organisationnel', 'tresorerie', 'custom')),
+					custom_categories TEXT,
+					status TEXT NOT NULL DEFAULT 'waiting' CHECK(status IN ('waiting', 'started', 'completed', 'cancelled')),
+					question_count INTEGER NOT NULL,
+					time_limit_seconds INTEGER NOT NULL,
+					quiz_payload TEXT NOT NULL,
+					created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+					started_at DATETIME,
+					ended_at DATETIME
+				);
+				INSERT INTO test_sessions_v2 (id, pin, created_by, exam_mode, custom_categories, status, question_count, time_limit_seconds, quiz_payload, created_at, started_at, ended_at)
+					SELECT id, pin, created_by, exam_mode, NULL, status, question_count, time_limit_seconds, quiz_payload, created_at, started_at, ended_at
+					FROM test_sessions;
+				DROP TABLE test_sessions;
+				ALTER TABLE test_sessions_v2 RENAME TO test_sessions;
+				CREATE INDEX IF NOT EXISTS idx_test_sessions_pin ON test_sessions(pin);
+				CREATE INDEX IF NOT EXISTS idx_test_sessions_status ON test_sessions(status);
+				CREATE INDEX IF NOT EXISTS idx_test_sessions_created_by ON test_sessions(created_by);
+				CREATE INDEX IF NOT EXISTS idx_test_sessions_created_at ON test_sessions(created_at DESC);
+			`);
+			_db.pragma('foreign_keys = ON');
+		}
+	} catch (e) {
+		console.error('Failed to migrate test_sessions for custom exam mode:', e);
+		_db.pragma('foreign_keys = ON');
+	}
+
 	// Cleanup legacy data: session creator is a facilitator, not a participant.
 	_db
 		.prepare(
@@ -151,7 +189,8 @@ export interface DbTestSession {
 	id: number;
 	pin: string;
 	created_by: string;
-	exam_mode: 'organisationnel' | 'tresorerie';
+	exam_mode: 'organisationnel' | 'tresorerie' | 'custom';
+	custom_categories: string | null;
 	status: TestSessionStatus;
 	question_count: number;
 	time_limit_seconds: number;
@@ -420,7 +459,8 @@ export interface TestSessionResultView {
 export interface TestSessionView {
 	id: number;
 	pin: string;
-	examMode: 'organisationnel' | 'tresorerie';
+	examMode: 'organisationnel' | 'tresorerie' | 'custom';
+	customCategories: string[] | null;
 	status: TestSessionStatus;
 	questionCount: number;
 	timeLimitSeconds: number;
@@ -441,7 +481,8 @@ export interface TestSessionView {
 export interface TestSessionHistoryItem {
 	id: number;
 	pin: string;
-	examMode: 'organisationnel' | 'tresorerie';
+	examMode: 'organisationnel' | 'tresorerie' | 'custom';
+	customCategories: string[] | null;
 	status: TestSessionStatus;
 	questionCount: number;
 	timeLimitSeconds: number;
@@ -458,7 +499,10 @@ export interface TestSessionHistoryItem {
 
 export interface CreateTestSessionInput {
 	createdByUserId: string;
-	examMode: 'organisationnel' | 'tresorerie';
+	examMode: 'organisationnel' | 'tresorerie' | 'custom';
+	customCategories?: string[];
+	customQuestionCount?: number;
+	customTimeLimitMinutes?: number;
 }
 
 export interface SubmitTestSessionResultInput {
@@ -473,20 +517,30 @@ export interface SubmitTestSessionResultInput {
 }
 
 function buildTestSessionQuizPayload(
-	examMode: 'organisationnel' | 'tresorerie'
+	examMode: 'organisationnel' | 'tresorerie' | 'custom',
+	customCategories?: string[],
+	customQuestionCount?: number
 ): QuestionWithAnswers[] {
-	const modeConfig = EXAM_MODES[examMode];
+	let categories: string[];
+	let questionCount: number;
+
+	if (examMode === 'custom') {
+		categories = customCategories ?? [];
+		questionCount = customQuestionCount ?? 20;
+	} else {
+		const modeConfig = EXAM_MODES[examMode];
+		categories = modeConfig.categories;
+		questionCount = modeConfig.questionCount;
+	}
+
 	const filteredQuestions = getAllQuestionsWithAnswers().filter(
 		(q): q is QuestionWithAnswers & { category: string } =>
-			typeof q.category === 'string' &&
-			modeConfig.categories.includes(
-				q.category as 'CLR' | 'Mouvement' | 'Organisationnel' | 'Trésorerie' | 'Pilotage'
-			)
+			typeof q.category === 'string' && categories.includes(q.category)
 	);
 
 	const selectedQuestions = shuffleArray(filteredQuestions).slice(
 		0,
-		Math.min(modeConfig.questionCount, filteredQuestions.length)
+		Math.min(questionCount, filteredQuestions.length)
 	);
 
 	return selectedQuestions.map((question) => ({
@@ -633,19 +687,29 @@ export function createTestSession(input: CreateTestSessionInput): {
 	id: number;
 	pin: string;
 	status: TestSessionStatus;
-	examMode: 'organisationnel' | 'tresorerie';
+	examMode: 'organisationnel' | 'tresorerie' | 'custom';
+	customCategories: string[] | null;
 	questionCount: number;
 	timeLimitSeconds: number;
 	createdAt: string;
 } {
-	const quizPayload = buildTestSessionQuizPayload(input.examMode);
+	const quizPayload = buildTestSessionQuizPayload(
+		input.examMode,
+		input.customCategories,
+		input.customQuestionCount
+	);
 	if (quizPayload.length === 0) {
 		throw new Error('No questions available for this exam mode');
 	}
 
 	const pin = generateUniqueSessionPin();
 	const questionCount = quizPayload.length;
-	const timeLimitSeconds = EXAM_MODES[input.examMode].timeLimit * 60;
+	const timeLimitSeconds =
+		input.examMode === 'custom'
+			? (input.customTimeLimitMinutes ?? 15) * 60
+			: EXAM_MODES[input.examMode].timeLimit * 60;
+	const customCategoriesJson =
+		input.examMode === 'custom' ? JSON.stringify(input.customCategories ?? []) : null;
 	const nowIso = new Date().toISOString();
 
 	const tx = getDb().transaction(() => {
@@ -653,14 +717,15 @@ export function createTestSession(input: CreateTestSessionInput): {
 			.prepare(
 				`
 			INSERT INTO test_sessions (
-				pin, created_by, exam_mode, status, question_count, time_limit_seconds, quiz_payload
-			) VALUES (?, ?, ?, 'waiting', ?, ?, ?)
+				pin, created_by, exam_mode, custom_categories, status, question_count, time_limit_seconds, quiz_payload
+			) VALUES (?, ?, ?, ?, 'waiting', ?, ?, ?)
 		`
 			)
 			.run(
 				pin,
 				input.createdByUserId,
 				input.examMode,
+				customCategoriesJson,
 				questionCount,
 				timeLimitSeconds,
 				JSON.stringify(quizPayload)
@@ -676,6 +741,7 @@ export function createTestSession(input: CreateTestSessionInput): {
 		pin,
 		status: 'waiting',
 		examMode: input.examMode,
+		customCategories: input.customCategories ?? null,
 		questionCount,
 		timeLimitSeconds,
 		createdAt: nowIso
@@ -938,6 +1004,7 @@ export function getTestSessionView(pin: string, userId: string): TestSessionView
 			s.pin,
 			s.created_by,
 			s.exam_mode,
+			s.custom_categories,
 			s.status,
 			s.question_count,
 			s.time_limit_seconds,
@@ -1006,10 +1073,20 @@ export function getTestSessionView(pin: string, userId: string): TestSessionView
 		flopQuestions = analytics.flopQuestions;
 	}
 
+	let customCategories: string[] | null = null;
+	if (session.exam_mode === 'custom' && session.custom_categories) {
+		try {
+			customCategories = JSON.parse(session.custom_categories);
+		} catch {
+			customCategories = null;
+		}
+	}
+
 	return {
 		id: session.id,
 		pin: session.pin,
 		examMode: session.exam_mode,
+		customCategories,
 		status: session.status,
 		questionCount: session.question_count,
 		timeLimitSeconds: session.time_limit_seconds,
@@ -1044,6 +1121,7 @@ export function getTestSessionHistory(limit = 100): TestSessionHistoryItem[] {
 			s.id,
 			s.pin,
 			s.exam_mode,
+			s.custom_categories,
 			s.status,
 			s.question_count,
 			s.time_limit_seconds,
@@ -1067,7 +1145,8 @@ export function getTestSessionHistory(limit = 100): TestSessionHistoryItem[] {
 			const typedRow = row as {
 				id: number;
 				pin: string;
-				exam_mode: 'organisationnel' | 'tresorerie';
+				exam_mode: 'organisationnel' | 'tresorerie' | 'custom';
+				custom_categories: string | null;
 				status: TestSessionStatus;
 				question_count: number;
 				time_limit_seconds: number;
@@ -1082,10 +1161,20 @@ export function getTestSessionHistory(limit = 100): TestSessionHistoryItem[] {
 				worst_score: number | null;
 			};
 
+			let customCategories: string[] | null = null;
+			if (typedRow.exam_mode === 'custom' && typedRow.custom_categories) {
+				try {
+					customCategories = JSON.parse(typedRow.custom_categories);
+				} catch {
+					customCategories = null;
+				}
+			}
+
 			return {
 				id: typedRow.id,
 				pin: typedRow.pin,
 				examMode: typedRow.exam_mode,
+				customCategories,
 				status: typedRow.status,
 				questionCount: typedRow.question_count,
 				timeLimitSeconds: typedRow.time_limit_seconds,

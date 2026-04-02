@@ -25,8 +25,31 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const body = await request.json();
 	const examMode = body?.examMode;
 
-	if (examMode !== 'organisationnel' && examMode !== 'tresorerie') {
+	const VALID_MODES = ['organisationnel', 'tresorerie', 'custom'];
+	if (!VALID_MODES.includes(examMode)) {
 		return json({ error: 'Invalid exam mode' }, { status: 400 });
+	}
+
+	if (examMode === 'custom') {
+		const categories: unknown = body?.categories;
+		if (
+			!Array.isArray(categories) ||
+			categories.length === 0 ||
+			!categories.every((c) => typeof c === 'string')
+		) {
+			return json(
+				{ error: 'Custom mode requires at least one category in "categories"' },
+				{ status: 400 }
+			);
+		}
+		const questionCount = body?.questionCount;
+		if (questionCount !== undefined && (typeof questionCount !== 'number' || questionCount < 1)) {
+			return json({ error: 'Invalid questionCount' }, { status: 400 });
+		}
+		const timeLimit = body?.timeLimitMinutes;
+		if (timeLimit !== undefined && (typeof timeLimit !== 'number' || timeLimit < 1)) {
+			return json({ error: 'Invalid timeLimitMinutes' }, { status: 400 });
+		}
 	}
 
 	try {
@@ -39,7 +62,12 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		const created = createTestSession({
 			createdByUserId: session.user.id,
-			examMode
+			examMode,
+			...(examMode === 'custom' && {
+				customCategories: body.categories as string[],
+				customQuestionCount: body.questionCount as number | undefined,
+				customTimeLimitMinutes: body.timeLimitMinutes as number | undefined
+			})
 		});
 
 		return json({ session: created });

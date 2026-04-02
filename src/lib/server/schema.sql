@@ -32,7 +32,8 @@ CREATE TABLE IF NOT EXISTS test_sessions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     pin TEXT NOT NULL UNIQUE,
     created_by TEXT NOT NULL REFERENCES users(id),
-    exam_mode TEXT NOT NULL CHECK(exam_mode IN ('organisationnel', 'tresorerie')),
+    exam_mode TEXT NOT NULL CHECK(exam_mode IN ('organisationnel', 'tresorerie', 'custom')),
+    custom_categories TEXT,          -- JSON array of category names, only for custom mode
     status TEXT NOT NULL DEFAULT 'waiting' CHECK(status IN ('waiting', 'started', 'completed', 'cancelled')),
     question_count INTEGER NOT NULL,
     time_limit_seconds INTEGER NOT NULL,

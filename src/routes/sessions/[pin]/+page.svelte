@@ -63,7 +63,8 @@
 	interface SessionView {
 		id: number;
 		pin: string;
-		examMode: 'organisationnel' | 'tresorerie';
+		examMode: 'organisationnel' | 'tresorerie' | 'custom';
+		customCategories: string[] | null;
 		status: 'waiting' | 'started' | 'completed' | 'cancelled';
 		questionCount: number;
 		timeLimitSeconds: number;
@@ -115,7 +116,13 @@
 		return liveSession.myResult;
 	});
 
-	function modeLabel(mode: 'organisationnel' | 'tresorerie'): string {
+	function modeLabel(
+		mode: 'organisationnel' | 'tresorerie' | 'custom',
+		customCategories?: string[] | null
+	): string {
+		if (mode === 'custom') {
+			return customCategories?.length ? customCategories.join(', ') : 'Catégories personnalisées';
+		}
 		return mode === 'organisationnel' ? 'TAC1 Organisationnel' : 'TAC1 Trésorerie';
 	}
 
@@ -378,7 +385,7 @@
 					Session #{liveSession.pin}
 				</h1>
 				<p class="text-[#122555]/60">
-					{modeLabel(liveSession.examMode)} • {liveSession.questionCount} questions • {Math.round(
+					{modeLabel(liveSession.examMode, liveSession.customCategories)} • {liveSession.questionCount} questions • {Math.round(
 						liveSession.timeLimitSeconds / 60
 					)} min
 				</p>

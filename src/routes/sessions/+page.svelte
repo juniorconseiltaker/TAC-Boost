@@ -7,6 +7,10 @@
 	import BuildingIcon from '@lucide/svelte/icons/building-2';
 	import WalletIcon from '@lucide/svelte/icons/wallet';
 	import UsersIcon from '@lucide/svelte/icons/users';
+	import ClipboardListIcon from '@lucide/svelte/icons/clipboard-list';
+	import TruckIcon from '@lucide/svelte/icons/truck';
+	import RouteIcon from '@lucide/svelte/icons/route';
+	import type { Question } from '$lib/types.js';
 	import { EXAM_MODES } from '$lib/types.js';
 
 	let { data }: { data: { session: Session; isUserAdmin: boolean } } = $props();
@@ -14,10 +18,31 @@
 	const PIN_LENGTH = 6;
 	let pinDigits = $state<string[]>(Array(PIN_LENGTH).fill(''));
 	let pinInputRefs: Array<HTMLInputElement | null> = [];
-	let examModeToCreate = $state<'organisationnel' | 'tresorerie'>('organisationnel');
+	let examModeToCreate = $state<'organisationnel' | 'tresorerie' | 'custom'>('organisationnel');
 	let loadingJoin = $state(false);
 	let loadingCreate = $state(false);
 	let errorMessage = $state<string | null>(null);
+
+	// Custom mode state
+	const ALL_CATEGORIES: Question['category'][] = [
+		'CLR',
+		'Mouvement',
+		'Organisationnel',
+		'Trésorerie',
+		'Pilotage'
+	];
+	let customCategories = $state<Question['category'][]>(['CLR', 'Mouvement']);
+	let customQuestionCount = $state(20);
+	let customTimeLimitMinutes = $state(15);
+
+	function toggleCustomCategory(cat: Question['category']) {
+		if (customCategories.includes(cat)) {
+			if (customCategories.length > 1) customCategories = customCategories.filter((c) => c !== cat);
+		} else {
+			customCategories = [...customCategories, cat];
+		}
+	}
+
 	const modeRules = [
 		{
 			key: 'organisationnel' as const,
@@ -140,10 +165,16 @@
 		loadingCreate = true;
 		errorMessage = null;
 		try {
+			const body: Record<string, unknown> = { examMode: examModeToCreate };
+			if (examModeToCreate === 'custom') {
+				body.categories = customCategories;
+				body.questionCount = customQuestionCount;
+				body.timeLimitMinutes = customTimeLimitMinutes;
+			}
 			const response = await fetch('/api/test-sessions', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ examMode: examModeToCreate })
+				body: JSON.stringify(body)
 			});
 			const payload = await response.json();
 			if (!response.ok) {
@@ -282,6 +313,88 @@
 								</div>
 							</div>
 						</button>
+						<button
+							type="button"
+							onclick={() => (examModeToCreate = 'custom')}
+							class="w-full p-4 rounded-xl border-2 text-left transition-colors {examModeToCreate ===
+							'custom'
+								? 'border-[#122555] bg-[#122555]/5'
+								: 'border-[#122555]/20 hover:bg-[#122555]/5'}"
+						>
+							<div class="flex items-center gap-3">
+								<ClipboardListIcon class="w-5 h-5 text-[#122555]" />
+								<div>
+									<p class="font-semibold text-[#122555]">Par catégories</p>
+									<p class="text-sm text-[#122555]/60">Choix libre des catégories</p>
+								</div>
+							</div>
+						</button>
+
+						{#if examModeToCreate === 'custom'}
+							<div class="rounded-xl border border-[#122555]/15 bg-[#122555]/[0.02] p-4 space-y-4">
+								<div>
+									<p class="text-xs font-semibold text-[#122555]/60 uppercase tracking-wider mb-2">
+										Catégories
+									</p>
+									<div class="grid grid-cols-2 gap-2">
+										{#each ALL_CATEGORIES as cat (cat)}
+											{@const icons = {
+												CLR: ClipboardListIcon,
+												Mouvement: TruckIcon,
+												Organisationnel: BuildingIcon,
+												Trésorerie: WalletIcon,
+												Pilotage: RouteIcon
+											}}
+											{@const Icon = icons[cat]}
+											<button
+												type="button"
+												onclick={() => toggleCustomCategory(cat)}
+												class="flex items-center gap-2 p-2.5 rounded-lg border-2 text-sm font-medium transition-all {customCategories.includes(
+													cat
+												)
+													? 'border-[#122555]/40 bg-[#122555]/10 text-[#122555]'
+													: 'border-gray-200 text-gray-500 hover:border-[#122555]/20'}"
+											>
+												<Icon class="w-4 h-4 flex-shrink-0" />
+												{cat}
+											</button>
+										{/each}
+									</div>
+								</div>
+								<div class="grid grid-cols-2 gap-3">
+									<div>
+										<label
+											for="customQuestionCount"
+											class="block text-xs font-semibold text-[#122555]/60 uppercase tracking-wider mb-1"
+											>Questions</label
+										>
+										<input
+											id="customQuestionCount"
+											type="number"
+											min="5"
+											max="100"
+											bind:value={customQuestionCount}
+											class="w-full px-3 py-2 text-sm border border-[#122555]/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#122555]/30 bg-white"
+										/>
+									</div>
+									<div>
+										<label
+											for="customTimeLimit"
+											class="block text-xs font-semibold text-[#122555]/60 uppercase tracking-wider mb-1"
+											>Minutes</label
+										>
+										<input
+											id="customTimeLimit"
+											type="number"
+											min="5"
+											max="120"
+											bind:value={customTimeLimitMinutes}
+											class="w-full px-3 py-2 text-sm border border-[#122555]/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#122555]/30 bg-white"
+										/>
+									</div>
+								</div>
+							</div>
+						{/if}
 					</div>
 
 					<button

@@ -18,7 +18,13 @@
 		});
 	}
 
-	function formatMode(mode: 'organisationnel' | 'tresorerie'): string {
+	function formatMode(
+		mode: 'organisationnel' | 'tresorerie' | 'custom',
+		customCategories?: string[] | null
+	): string {
+		if (mode === 'custom') {
+			return customCategories?.length ? customCategories.join(', ') : 'Personnalisé';
+		}
 		return mode === 'organisationnel' ? 'Organisationnel' : 'Trésorerie';
 	}
 
@@ -63,7 +69,7 @@
 								{session.status}
 							</span>
 						</div>
-						<p class="text-sm text-[#122555]/70 mb-1">{formatMode(session.examMode)}</p>
+						<p class="text-sm text-[#122555]/70 mb-1">{formatMode(session.examMode, session.customCategories)}</p>
 						<p class="text-xs text-[#122555]/60">
 							{session.participantCount} participants • {session.submittedCount} rendus
 						</p>
@@ -83,7 +89,7 @@
 									Session PIN {data.selectedSession.pin}
 								</h3>
 								<p class="text-[#122555]/60">
-									{formatMode(data.selectedSession.examMode)} • {data.selectedSession.questionCount} questions
+									{formatMode(data.selectedSession.examMode, data.selectedSession.customCategories)} • {data.selectedSession.questionCount} questions
 									• {Math.round(data.selectedSession.timeLimitSeconds / 60)} min
 								</p>
 							</div>
