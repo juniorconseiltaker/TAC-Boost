@@ -11,6 +11,37 @@
 	import TruckIcon from '@lucide/svelte/icons/truck';
 	import UsersIcon from '@lucide/svelte/icons/users';
 	import RouteIcon from '@lucide/svelte/icons/route';
+	import LinkIcon from '@lucide/svelte/icons/link';
+	import { goto } from '$app/navigation';
+	import { browser } from '$app/environment';
+
+	const ALL_CATEGORIES: Question['category'][] = [
+		'CLR',
+		'Mouvement',
+		'Organisationnel',
+		'Trésorerie',
+		'Pilotage'
+	];
+
+	function readInitialConfig(): {
+		cats: Question['category'][];
+		q: number;
+		t: number;
+	} {
+		if (!browser) return { cats: ALL_CATEGORIES, q: 10, t: 3 };
+		const params = new URLSearchParams(window.location.search);
+		const rawCats = params.get('cats');
+		const cats = rawCats
+			? (rawCats
+					.split(',')
+					.filter((c) => ALL_CATEGORIES.includes(c as Question['category'])) as Question['category'][])
+			: ALL_CATEGORIES;
+		const q = parseInt(params.get('q') ?? '') || 10;
+		const t = parseInt(params.get('t') ?? '') || 3;
+		return { cats: cats.length > 0 ? cats : ALL_CATEGORIES, q, t };
+	}
+
+	const initial = readInitialConfig();
 
 	let {
 		startQuiz,
@@ -36,16 +67,41 @@
 	let tresorerieCount = $derived(questions.filter((q) => q.category === 'Trésorerie').length);
 	let pilotageCount = $derived(questions.filter((q) => q.category === 'Pilotage').length);
 
-	let questionCount = $state(10);
-	let timeLimit = $state(3);
+	let questionCount = $state(initial.q);
+	let timeLimit = $state(initial.t);
 
-	let selectedCategories = $state<Question['category'][]>([
-		'CLR',
-		'Mouvement',
-		'Organisationnel',
-		'Trésorerie',
-		'Pilotage'
-	]);
+	let selectedCategories = $state<Question['category'][]>(initial.cats);
+
+	let linkCopied = $state(false);
+
+	function getShareUrl(): string {
+		if (!browser) return '';
+		const url = new URL(window.location.href);
+		url.search = '';
+		const isAllCats = selectedCategories.length === ALL_CATEGORIES.length;
+		if (!isAllCats) url.searchParams.set('cats', selectedCategories.join(','));
+		url.searchParams.set('q', String(questionCount));
+		url.searchParams.set('t', String(timeLimit));
+		return url.toString();
+	}
+
+	function updateUrl() {
+		if (!browser) return;
+		const url = new URL(window.location.href);
+		url.search = '';
+		const isAllCats = selectedCategories.length === ALL_CATEGORIES.length;
+		if (!isAllCats) url.searchParams.set('cats', selectedCategories.join(','));
+		if (questionCount !== 10) url.searchParams.set('q', String(questionCount));
+		if (timeLimit !== 3) url.searchParams.set('t', String(timeLimit));
+		goto(url.pathname + url.search, { replaceState: true, keepFocus: true, noScroll: true });
+	}
+
+	async function copyShareLink() {
+		const url = getShareUrl();
+		await navigator.clipboard.writeText(url);
+		linkCopied = true;
+		setTimeout(() => (linkCopied = false), 2000);
+	}
 
 	// Carousel state: 0 = official, 1 = training
 	let activeMode = $state(0);
@@ -72,6 +128,7 @@
 		questionCount = preset.questions;
 		timeLimit = preset.time;
 		showCustom = false;
+		updateUrl();
 	}
 
 	function toggleCategory(category: Question['category']) {
@@ -82,6 +139,7 @@
 		} else {
 			selectedCategories = [...selectedCategories, category];
 		}
+		updateUrl();
 	}
 
 	function handleStart() {
@@ -517,6 +575,7 @@
 											id="questionCount"
 											type="number"
 											bind:value={questionCount}
+											oninput={updateUrl}
 											min="1"
 											max={totalQuestions}
 											class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
@@ -530,6 +589,7 @@
 											id="timeLimit"
 											type="number"
 											bind:value={timeLimit}
+											oninput={updateUrl}
 											min="1"
 											max="120"
 											class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
@@ -586,28 +646,41 @@
 						{/if}
 					</div>
 
-					<button
-						onclick={handleStart}
-						class="w-full bg-[#122555] hover:bg-[#0d1a3d] text-white font-semibold py-4 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-					>
-						<span class="flex items-center justify-center gap-2">
-							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-								/>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-								/>
-							</svg>
-							Lancer l'entraînement
-						</span>
-					</button>
+					<div class="flex gap-2">
+						<button
+							onclick={handleStart}
+							class="flex-1 bg-[#122555] hover:bg-[#0d1a3d] text-white font-semibold py-4 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+						>
+							<span class="flex items-center justify-center gap-2">
+								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+									/>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+									/>
+								</svg>
+								Lancer l'entraînement
+							</span>
+						</button>
+						<button
+							onclick={copyShareLink}
+							title="Copier le lien avec cette configuration"
+							class="px-4 rounded-xl border-2 transition-all duration-200 flex items-center justify-center gap-1.5 text-sm font-medium
+								{linkCopied
+								? 'border-green-400 bg-green-50 text-green-700'
+								: 'border-[#122555]/20 bg-white text-[#122555]/70 hover:border-[#122555]/40 hover:text-[#122555]'}"
+						>
+							<LinkIcon class="w-4 h-4" />
+							{linkCopied ? 'Copié !' : 'Partager'}
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>
