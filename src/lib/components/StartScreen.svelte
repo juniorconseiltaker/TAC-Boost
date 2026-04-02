@@ -10,6 +10,7 @@
 	import SettingsIcon from '@lucide/svelte/icons/settings';
 	import TruckIcon from '@lucide/svelte/icons/truck';
 	import UsersIcon from '@lucide/svelte/icons/users';
+	import RouteIcon from '@lucide/svelte/icons/route';
 
 	let {
 		startQuiz,
@@ -33,6 +34,7 @@
 		questions.filter((q) => q.category === 'Organisationnel').length
 	);
 	let tresorerieCount = $derived(questions.filter((q) => q.category === 'Trésorerie').length);
+	let pilotageCount = $derived(questions.filter((q) => q.category === 'Pilotage').length);
 
 	let questionCount = $state(10);
 	let timeLimit = $state(3);
@@ -41,7 +43,8 @@
 		'CLR',
 		'Mouvement',
 		'Organisationnel',
-		'Trésorerie'
+		'Trésorerie',
+		'Pilotage'
 	]);
 
 	// Carousel state: 0 = official, 1 = training
@@ -431,6 +434,17 @@
 								<WalletIcon class="w-5 h-5" />
 								<span>Trésorerie ({tresorerieCount})</span>
 							</button>
+							<button
+								onclick={() => toggleCategory('Pilotage')}
+								class="p-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium flex flex-col items-center justify-center gap-1 {selectedCategories.includes(
+									'Pilotage'
+								)
+									? 'bg-[#122555]/10 border-[#122555]/30 text-[#122555]'
+									: 'bg-gray-50 border-gray-200 text-gray-500 hover:border-[#122555]/20'}"
+							>
+								<RouteIcon class="w-5 h-5" />
+								<span>Pilotage ({pilotageCount})</span>
+							</button>
 						</div>
 					</div>
 
@@ -565,7 +579,7 @@
 								{timeLimit} min
 							</span>
 						</div>
-						{#if selectedCategories.length < 4}
+						{#if selectedCategories.length < 5}
 							<p class="text-xs text-[#122555]/60 text-center mt-2">
 								{selectedCategories.join(', ')}
 							</p>

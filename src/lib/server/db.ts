@@ -106,7 +106,8 @@ export function getDb(): Database.Database {
 		{ name: 'Mouvement', slug: 'mouvement' },
 		{ name: 'CLR', slug: 'clr' },
 		{ name: 'Organisationnel', slug: 'organisationnel' },
-		{ name: 'Trésorerie', slug: 'tresorerie' }
+		{ name: 'Trésorerie', slug: 'tresorerie' },
+		{ name: 'Pilotage', slug: 'pilotage' }
 	];
 
 	const insertCategory = _db.prepare(
@@ -479,7 +480,7 @@ function buildTestSessionQuizPayload(
 		(q): q is QuestionWithAnswers & { category: string } =>
 			typeof q.category === 'string' &&
 			modeConfig.categories.includes(
-				q.category as 'CLR' | 'Mouvement' | 'Organisationnel' | 'Trésorerie'
+				q.category as 'CLR' | 'Mouvement' | 'Organisationnel' | 'Trésorerie' | 'Pilotage'
 			)
 	);
 

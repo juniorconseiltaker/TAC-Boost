@@ -8,7 +8,7 @@ export interface Question {
 	id: string;
 	question: string;
 	answerOptions: AnswerOption[];
-	category: 'CLR' | 'Mouvement' | 'Organisationnel' | 'Trésorerie';
+	category: 'CLR' | 'Mouvement' | 'Organisationnel' | 'Trésorerie' | 'Pilotage';
 }
 
 export interface QuizAnswer {
