@@ -11,6 +11,7 @@
 	import TruckIcon from '@lucide/svelte/icons/truck';
 	import UsersIcon from '@lucide/svelte/icons/users';
 	import RouteIcon from '@lucide/svelte/icons/route';
+	import BookOpenIcon from '@lucide/svelte/icons/book-open';
 	import LinkIcon from '@lucide/svelte/icons/link';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
@@ -20,7 +21,8 @@
 		'Mouvement',
 		'Organisationnel',
 		'Trésorerie',
-		'Pilotage'
+		'Pilotage',
+		"Suivi d'Études"
 	];
 
 	function readInitialConfig(): {
@@ -66,6 +68,7 @@
 	);
 	let tresorerieCount = $derived(questions.filter((q) => q.category === 'Trésorerie').length);
 	let pilotageCount = $derived(questions.filter((q) => q.category === 'Pilotage').length);
+	let suiviEtudesCount = $derived(questions.filter((q) => q.category === "Suivi d'Études").length);
 
 	let questionCount = $state(initial.q);
 	let timeLimit = $state(initial.t);
@@ -502,6 +505,17 @@
 							>
 								<RouteIcon class="w-5 h-5" />
 								<span>Pilotage ({pilotageCount})</span>
+							</button>
+							<button
+								onclick={() => toggleCategory("Suivi d'Études")}
+								class="p-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium flex flex-col items-center justify-center gap-1 {selectedCategories.includes(
+									"Suivi d'Études"
+								)
+									? 'bg-[#122555]/10 border-[#122555]/30 text-[#122555]'
+									: 'bg-gray-50 border-gray-200 text-gray-500 hover:border-[#122555]/20'}"
+							>
+								<BookOpenIcon class="w-5 h-5" />
+								<span>Suivi d'Études ({suiviEtudesCount})</span>
 							</button>
 						</div>
 					</div>
