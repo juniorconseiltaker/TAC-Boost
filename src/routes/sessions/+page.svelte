@@ -31,7 +31,7 @@
 		'Organisationnel',
 		'Trésorerie',
 		'Pilotage',
-		"Suivi d'Etudes"
+		"Suivi d'Études"
 	];
 	let customCategories = $state<Question['category'][]>(['CLR', 'Mouvement']);
 	let customQuestionCount = $state(20);
@@ -346,7 +346,7 @@
 												Organisationnel: BuildingIcon,
 												Trésorerie: WalletIcon,
 												Pilotage: RouteIcon,
-												"Suivi d'Etudes": BookOpenIcon
+												"Suivi d'Études": BookOpenIcon
 											}}
 											{@const Icon = icons[cat]}
 											<button

@@ -22,7 +22,7 @@
 		'Organisationnel',
 		'Trésorerie',
 		'Pilotage',
-		"Suivi d'Etudes"
+		"Suivi d'Études"
 	];
 
 	function readInitialConfig(): {
@@ -68,7 +68,7 @@
 	);
 	let tresorerieCount = $derived(questions.filter((q) => q.category === 'Trésorerie').length);
 	let pilotageCount = $derived(questions.filter((q) => q.category === 'Pilotage').length);
-	let suiviEtudesCount = $derived(questions.filter((q) => q.category === "Suivi d'Etudes").length);
+	let suiviEtudesCount = $derived(questions.filter((q) => q.category === "Suivi d'Études").length);
 
 	let questionCount = $state(initial.q);
 	let timeLimit = $state(initial.t);
@@ -507,15 +507,15 @@
 								<span>Pilotage ({pilotageCount})</span>
 							</button>
 							<button
-								onclick={() => toggleCategory("Suivi d'Etudes")}
+								onclick={() => toggleCategory("Suivi d'Études")}
 								class="p-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium flex flex-col items-center justify-center gap-1 {selectedCategories.includes(
-									"Suivi d'Etudes"
+									"Suivi d'Études"
 								)
 									? 'bg-[#122555]/10 border-[#122555]/30 text-[#122555]'
 									: 'bg-gray-50 border-gray-200 text-gray-500 hover:border-[#122555]/20'}"
 							>
 								<BookOpenIcon class="w-5 h-5" />
-								<span>Suivi d'Etudes ({suiviEtudesCount})</span>
+								<span>Suivi d'Études ({suiviEtudesCount})</span>
 							</button>
 						</div>
 					</div>
