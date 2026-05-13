@@ -1,4 +1,4 @@
-<script lang="ts">
+jj<script lang="ts">
 	import FileQuestionIcon from '@lucide/svelte/icons/file-question';
 	import FolderOpenIcon from '@lucide/svelte/icons/folder-open';
 	import UsersIcon from '@lucide/svelte/icons/users';
