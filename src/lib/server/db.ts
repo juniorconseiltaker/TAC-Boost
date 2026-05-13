@@ -145,7 +145,8 @@ export function getDb(): Database.Database {
 		{ name: 'CLR', slug: 'clr' },
 		{ name: 'Organisationnel', slug: 'organisationnel' },
 		{ name: 'Trésorerie', slug: 'tresorerie' },
-		{ name: 'Pilotage', slug: 'pilotage' }
+		{ name: 'Pilotage', slug: 'pilotage' },
+		{ name: "Suivi d'Etudes", slug: 'suivi-etudes' }
 	];
 
 	const insertCategory = _db.prepare(

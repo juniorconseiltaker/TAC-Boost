@@ -10,6 +10,7 @@
 	import ClipboardListIcon from '@lucide/svelte/icons/clipboard-list';
 	import TruckIcon from '@lucide/svelte/icons/truck';
 	import RouteIcon from '@lucide/svelte/icons/route';
+	import BookOpenIcon from '@lucide/svelte/icons/book-open';
 	import type { Question } from '$lib/types.js';
 	import { EXAM_MODES } from '$lib/types.js';
 
@@ -29,7 +30,8 @@
 		'Mouvement',
 		'Organisationnel',
 		'Trésorerie',
-		'Pilotage'
+		'Pilotage',
+		"Suivi d'Etudes"
 	];
 	let customCategories = $state<Question['category'][]>(['CLR', 'Mouvement']);
 	let customQuestionCount = $state(20);
@@ -343,7 +345,8 @@
 												Mouvement: TruckIcon,
 												Organisationnel: BuildingIcon,
 												Trésorerie: WalletIcon,
-												Pilotage: RouteIcon
+												Pilotage: RouteIcon,
+												"Suivi d'Etudes": BookOpenIcon
 											}}
 											{@const Icon = icons[cat]}
 											<button
